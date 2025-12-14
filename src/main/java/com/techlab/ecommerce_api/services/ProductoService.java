@@ -23,4 +23,6 @@ public interface ProductoService {
     Producto actualizarStock(Long productoId, Integer nuevoStock);
 
     boolean hayStockSuficiente(Long productoId, Integer cantidad);
+
+    List<Producto> buscarPorNombreCategoria(String nombreCategoria);
 }

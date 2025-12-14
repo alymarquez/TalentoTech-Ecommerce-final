@@ -15,6 +15,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query("SELECT p FROM Pedido p ORDER BY p.fechaCreacion DESC")
     List<Pedido> findAllOrderByFechaDesc();
     
+    @Query("SELECT p FROM Pedido p WHERE p.usuario.id = :usuarioId ORDER BY p.fechaCreacion DESC")
+    List<Pedido> findByUsuarioId(Long usuarioId);
+    
     @Query("SELECT p FROM Pedido p JOIN p.lineasPedido lp WHERE lp.producto.stock < 10")
     List<Pedido> findPedidosConStockBajo();
 }

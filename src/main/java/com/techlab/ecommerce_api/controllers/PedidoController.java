@@ -1,5 +1,8 @@
 package com.techlab.ecommerce_api.controllers;
 
+import com.techlab.ecommerce_api.models.Usuario;
+import com.techlab.ecommerce_api.services.UsuarioService;
+import com.techlab.ecommerce_api.models.dto.PedidoRequestDTO;
 import com.techlab.ecommerce_api.models.LineaPedido;
 import com.techlab.ecommerce_api.models.Pedido;
 import com.techlab.ecommerce_api.models.dto.ErrorResponseDTO;
@@ -23,27 +26,31 @@ public class PedidoController {
     @Autowired
     private PedidoService pedidoService;
 
+    @Autowired
+    private UsuarioService usuarioService;
+
     @PostMapping
-    public ResponseEntity<?> crearPedido(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<?> crearPedido(@RequestBody PedidoRequestDTO request) {
         try {
-            @SuppressWarnings("unchecked")
-            Map<String, Integer> productosCantidad = (Map<String, Integer>) request.get("productos");
-
-            if (productosCantidad == null || productosCantidad.isEmpty()) {
-                return ResponseEntity.badRequest().body("Debe especificar productos para el pedido");
+            if (request.getUsuarioEmail() == null || request.getUsuarioEmail().trim().isEmpty()) {
+                ErrorResponseDTO error = new ErrorResponseDTO("Error", "Email de usuario requerido");
+                return ResponseEntity.badRequest().body(error);
             }
 
-            Map<Long, Integer> productosMap = new HashMap<>();
-            for (Map.Entry<String, Integer> entry : productosCantidad.entrySet()) {
-                try {
-                    Long productoId = Long.parseLong(entry.getKey());
-                    productosMap.put(productoId, entry.getValue());
-                } catch (NumberFormatException e) {
-                    return ResponseEntity.badRequest().body("ID de producto inválido: " + entry.getKey());
-                }
+            if (request.getProductos() == null || request.getProductos().isEmpty()) {
+                ErrorResponseDTO error = new ErrorResponseDTO("Error", "Debe especificar productos");
+                return ResponseEntity.badRequest().body(error);
             }
 
-            Pedido pedido = pedidoService.crearPedido(productosMap);
+            String nombreUsuario = request.getUsuarioNombre() != null ? request.getUsuarioNombre() : "Cliente";
+
+            Usuario usuario = usuarioService.crearObtenerUsuario(
+                    nombreUsuario,
+                    request.getUsuarioEmail());
+
+            Map<Long, Integer> productosMap = request.getProductos();
+
+            Pedido pedido = pedidoService.crearPedidoConUsuario(productosMap, usuario);
 
             PedidoResponseDTO response = new PedidoResponseDTO(
                     pedido.getId(),
@@ -51,6 +58,12 @@ public class PedidoController {
                     pedido.getEstado(),
                     pedido.getTotal(),
                     "Pedido creado exitosamente");
+
+            Map<String, Object> datosExtra = new HashMap<>();
+            datosExtra.put("usuarioId", usuario.getId());
+            datosExtra.put("usuarioNombre", usuario.getNombre());
+            datosExtra.put("usuarioEmail", usuario.getEmail());
+            response.setDatosExtra(datosExtra);
 
             List<Map<String, Object>> productosInfo = new ArrayList<>();
             if (pedido.getLineasPedido() != null) {
@@ -129,4 +142,19 @@ public class PedidoController {
         List<Pedido> pedidos = pedidoService.findAll();
         return ResponseEntity.ok(pedidos);
     }
+
+    @GetMapping("/usuario/{email}")
+public ResponseEntity<?> getPedidosPorUsuario(@PathVariable String email) {
+    try {
+        Usuario usuario = usuarioService.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        
+        List<Pedido> pedidos = pedidoService.findByUsuarioId(usuario.getId());
+        
+        return ResponseEntity.ok(pedidos);
+        
+    } catch (IllegalArgumentException e) {
+        return ResponseEntity.notFound().build();
+    }
+}
 }

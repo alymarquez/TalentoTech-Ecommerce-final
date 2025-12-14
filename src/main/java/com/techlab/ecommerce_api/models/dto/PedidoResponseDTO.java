@@ -13,6 +13,7 @@ public class PedidoResponseDTO {
     private Double total;
     private String mensaje;
     private List<Map<String, Object>> productos;
+    private Map<String, Object> datosExtra;
 
     public PedidoResponseDTO(Long id, LocalDateTime fechaCreacion, String estado,
             Double total, String mensaje) {

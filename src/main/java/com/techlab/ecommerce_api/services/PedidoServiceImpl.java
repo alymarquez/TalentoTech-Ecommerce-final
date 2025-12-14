@@ -4,6 +4,7 @@ import com.techlab.ecommerce_api.exceptions.StockInsuficienteException;
 import com.techlab.ecommerce_api.models.LineaPedido;
 import com.techlab.ecommerce_api.models.Pedido;
 import com.techlab.ecommerce_api.models.Producto;
+import com.techlab.ecommerce_api.models.Usuario;
 import com.techlab.ecommerce_api.repositories.PedidoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class PedidoServiceImpl implements PedidoService {
     @Autowired
     private ProductoService productoService;
 
+    @Override
     public Pedido crearPedido(Map<Long, Integer> productosCantidad) {
         if (productosCantidad == null || productosCantidad.isEmpty()) {
             throw new IllegalArgumentException("El pedido debe contener al menos un producto");
@@ -31,6 +33,42 @@ public class PedidoServiceImpl implements PedidoService {
         validarStockDisponible(productosCantidad);
 
         Pedido pedido = new Pedido();
+
+        for (Map.Entry<Long, Integer> entry : productosCantidad.entrySet()) {
+            Long productoId = entry.getKey();
+            Integer cantidad = entry.getValue();
+
+            if (cantidad <= 0) {
+                throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
+            }
+
+            Producto producto = productoService.findById(productoId)
+                    .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado: " + productoId));
+
+            productoService.descontarStock(productoId, cantidad);
+
+            LineaPedido linea = new LineaPedido(producto, cantidad);
+            pedido.agregarLinea(linea);
+        }
+
+        pedido.calcularTotal();
+        return pedidoRepository.save(pedido);
+    }
+
+    @Override
+    public Pedido crearPedidoConUsuario(Map<Long, Integer> productosCantidad, Usuario usuario) {
+        if (productosCantidad == null || productosCantidad.isEmpty()) {
+            throw new IllegalArgumentException("El pedido debe contener al menos un producto");
+        }
+
+        if (usuario == null) {
+            throw new IllegalArgumentException("El usuario no puede ser nulo");
+        }
+
+        validarStockDisponible(productosCantidad);
+
+        Pedido pedido = new Pedido();
+        pedido.setUsuario(usuario);
 
         for (Map.Entry<Long, Integer> entry : productosCantidad.entrySet()) {
             Long productoId = entry.getKey();
@@ -72,15 +110,18 @@ public class PedidoServiceImpl implements PedidoService {
         }
     }
 
+    @Override
     public List<Pedido> findAll() {
         return pedidoRepository.findAllOrderByFechaDesc();
     }
 
+    @Override
     public Pedido findById(Long id) {
         return pedidoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado"));
     }
 
+    @Override
     public Pedido actualizarEstado(Long id, String nuevoEstado) {
         Pedido pedido = findById(id);
 
@@ -93,6 +134,7 @@ public class PedidoServiceImpl implements PedidoService {
         return pedidoRepository.save(pedido);
     }
 
+    @Override
     public Pedido cancelarPedido(Long id) {
         Pedido pedido = findById(id);
 
@@ -128,7 +170,13 @@ public class PedidoServiceImpl implements PedidoService {
                 .contains(nuevoEstado);
     }
 
+    @Override
     public List<Pedido> findByEstado(String estado) {
         return pedidoRepository.findByEstado(estado);
+    }
+
+    @Override
+    public List<Pedido> findByUsuarioId(Long usuarioId) {
+        return pedidoRepository.findByUsuarioId(usuarioId);
     }
 }

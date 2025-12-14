@@ -35,9 +35,14 @@ public class ProductoServiceImp implements ProductoService {
     public boolean existsById(Long id) {
         return productoRepository.existsById(id);
     }
-
+    
     public List<Producto> buscarPorNombre(String nombre) {
         return productoRepository.findByNombreContainingIgnoreCase(nombre);
+    }
+
+    @Override
+    public List<Producto> buscarPorNombreCategoria(String nombreCategoria) {
+        return productoRepository.findByCategoriaNombre(nombreCategoria);
     }
 
     public void descontarStock(Long productoId, Integer cantidad) {
