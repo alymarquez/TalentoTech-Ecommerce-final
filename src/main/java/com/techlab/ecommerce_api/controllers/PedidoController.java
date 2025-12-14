@@ -2,6 +2,8 @@ package com.techlab.ecommerce_api.controllers;
 
 import com.techlab.ecommerce_api.models.LineaPedido;
 import com.techlab.ecommerce_api.models.Pedido;
+import com.techlab.ecommerce_api.models.dto.ErrorResponseDTO;
+import com.techlab.ecommerce_api.models.dto.PedidoResponseDTO;
 import com.techlab.ecommerce_api.services.PedidoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -43,13 +45,12 @@ public class PedidoController {
 
             Pedido pedido = pedidoService.crearPedido(productosMap);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("id", pedido.getId());
-            response.put("fechaCreacion", pedido.getFechaCreacion().toString()); // Convertir a String
-            response.put("estado", pedido.getEstado());
-            response.put("total", pedido.getTotal());
-            response.put("mensaje", "Pedido creado exitosamente");
+            PedidoResponseDTO response = new PedidoResponseDTO(
+                    pedido.getId(),
+                    pedido.getFechaCreacion(),
+                    pedido.getEstado(),
+                    pedido.getTotal(),
+                    "Pedido creado exitosamente");
 
             List<Map<String, Object>> productosInfo = new ArrayList<>();
             if (pedido.getLineasPedido() != null) {
@@ -62,17 +63,13 @@ public class PedidoController {
                     productosInfo.add(productoInfo);
                 }
             }
-            response.put("productos", productosInfo);
+            response.setProductos(productosInfo);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
         } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("success", false);
-            errorResponse.put("error", e.getMessage());
-            errorResponse.put("mensaje", "Error al crear pedido");
-
-            return ResponseEntity.badRequest().body(errorResponse);
+            ErrorResponseDTO error = new ErrorResponseDTO("Error al crear pedido", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
         }
     }
 
