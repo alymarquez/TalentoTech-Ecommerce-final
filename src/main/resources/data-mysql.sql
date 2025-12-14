@@ -1,3 +1,4 @@
+-- Insertar categorías
 INSERT IGNORE INTO categorias (nombre, descripcion) VALUES
 ('Electrónica', 'Productos electrónicos y dispositivos'),
 ('Ropa', 'Ropa y accesorios'),
@@ -7,7 +8,7 @@ INSERT IGNORE INTO categorias (nombre, descripcion) VALUES
 ('Accesorios', 'Accesorios varios');
 
 -- Insertar productos
-INSERT INTO productos (nombre, descripcion, precio, categoria_id, imagen_url, stock) VALUES
+INSERT IGNORE INTO productos (nombre, descripcion, precio, categoria_id, imagen_url, stock) VALUES
 ('Café Premium', 'Café de alta calidad tostado artesanalmente', 5.99,
     (SELECT id FROM categorias WHERE nombre = 'Bebidas'),
     'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085', 50),
