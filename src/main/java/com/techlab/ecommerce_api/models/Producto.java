@@ -20,8 +20,9 @@ public class Producto {
     @Column(nullable = false)
     private Double precio;
 
-    @Column(nullable = false)
-    private String categoria;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoria_id", nullable = false)
+    private Categoria categoria;
 
     private String imagenUrl;
 
@@ -32,7 +33,7 @@ public class Producto {
     }
 
     public Producto(String nombre, String descripcion, Double precio,
-            String categoria, String imagenUrl, Integer stock) {
+            Categoria categoria, String imagenUrl, Integer stock) {
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.precio = precio;
