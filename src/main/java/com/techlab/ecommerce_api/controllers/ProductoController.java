@@ -2,6 +2,8 @@ package com.techlab.ecommerce_api.controllers;
 
 import com.techlab.ecommerce_api.models.Producto;
 import com.techlab.ecommerce_api.repositories.ProductoRepository;
+import com.techlab.ecommerce_api.services.ProductoService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,23 +13,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 @RestController
 @RequestMapping("/api/productos")
 @CrossOrigin("*")
 public class ProductoController {
 
     @Autowired
-    private ProductoRepository productoRepository;
+    private ProductoService productoService;
 
     @GetMapping
     public List<Producto> getAll() {
-        return productoRepository.findAll();
+        return productoService.findAll();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Producto> getById(@PathVariable Long id) {
-        return productoRepository.findById(id)
+        return productoService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -41,7 +42,7 @@ public class ProductoController {
                 return ResponseEntity.badRequest().body(error);
             }
 
-            Producto savedProducto = productoRepository.save(producto);
+            Producto savedProducto = productoService.save(producto);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedProducto);
 
         } catch (Exception e) {
@@ -53,19 +54,19 @@ public class ProductoController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Producto> update(@PathVariable Long id, @RequestBody Producto producto) {
-        if (!productoRepository.existsById(id)) {
+        if (!productoService.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
         producto.setId(id);
-        return ResponseEntity.ok(productoRepository.save(producto));
+        return ResponseEntity.ok(productoService.save(producto));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (!productoRepository.existsById(id)) {
+        if (!productoService.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
-        productoRepository.deleteById(id);
+        productoService.deleteById(id);
         return ResponseEntity.ok().build();
     }
 }
