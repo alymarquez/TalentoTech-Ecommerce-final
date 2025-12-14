@@ -1,11 +1,16 @@
 package com.techlab.ecommerce_api.controllers;
+
 import com.techlab.ecommerce_api.models.Producto;
 import com.techlab.ecommerce_api.repositories.ProductoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/productos")
@@ -15,13 +20,11 @@ public class ProductoController {
     @Autowired
     private ProductoRepository productoRepository;
 
-    // GET todos los productos
     @GetMapping
     public List<Producto> getAll() {
         return productoRepository.findAll();
     }
 
-    // GET por ID
     @GetMapping("/{id}")
     public ResponseEntity<Producto> getById(@PathVariable Long id) {
         return productoRepository.findById(id)
@@ -29,13 +32,25 @@ public class ProductoController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // POST crear producto
     @PostMapping
-    public Producto create(@RequestBody Producto producto) {
-        return productoRepository.save(producto);
+    public ResponseEntity<?> createProducto(@RequestBody Producto producto) {
+        try {
+            if (producto.getPrecio() < 0 || producto.getStock() < 0) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Precio y stock no pueden ser negativos");
+                return ResponseEntity.badRequest().body(error);
+            }
+
+            Producto savedProducto = productoRepository.save(producto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedProducto);
+
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Error al crear producto: " + e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
     }
 
-    // PUT actualizar producto
     @PutMapping("/{id}")
     public ResponseEntity<Producto> update(@PathVariable Long id, @RequestBody Producto producto) {
         if (!productoRepository.existsById(id)) {
@@ -45,7 +60,6 @@ public class ProductoController {
         return ResponseEntity.ok(productoRepository.save(producto));
     }
 
-    // DELETE eliminar producto
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (!productoRepository.existsById(id)) {
